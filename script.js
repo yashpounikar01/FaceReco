@@ -1,9 +1,9 @@
 const video = document.getElementById("video");
 
 Promise.all([
-  faceapi.nets.ssdMobilenetv1.loadFromUri("https://github.com/yashpounikar01/models"),
-  faceapi.nets.faceRecognitionNet.loadFromUri("https://github.com/yashpounikar01/models"),
-  faceapi.nets.faceLandmark68Net.loadFromUri("https://github.com/yashpounikar01/models"),
+  faceapi.nets.ssdMobilenetv1.loadFromUri("https://yashpounikar01.github.io/models/"),
+  faceapi.nets.faceRecognitionNet.loadFromUri("https://yashpounikar01.github.io/models/"),
+  faceapi.nets.faceLandmark68Net.loadFromUri("https://yashpounikar01.github.io/models/"),
 ]).then(startWebcam);
 
 function startWebcam() {
