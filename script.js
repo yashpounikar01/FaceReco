@@ -1,72 +1,42 @@
-const video = document.getElementById("video");
+const fileInput = document.getElementById('fileInput');
+const inputImage = document.getElementById('inputImage');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
 
-Promise.all([
-  faceapi.nets.ssdMobilenetv1.loadFromUri("https://yashpounikar01.github.io/models/"),
-  faceapi.nets.faceRecognitionNet.loadFromUri("https://yashpounikar01.github.io/models/"),
-  faceapi.nets.faceLandmark68Net.loadFromUri("https://yashpounikar01.github.io/models/"),
-]).then(startWebcam);
+fileInput.addEventListener('change', handleFileSelect);
 
-function startWebcam() {
-  navigator.mediaDevices
-    .getUserMedia({
-      video: true,
-      audio: false,
-    })
-    .then((stream) => {
-      video.srcObject = stream;
-    })
-    .catch((error) => {
-      console.error(error);
-    });
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  const reader = new FileReader();
+
+  reader.onload = function(event) {
+    inputImage.src = event.target.result;
+  };
+
+  reader.readAsDataURL(file);
 }
 
-function getLabeledFaceDescriptions() {
-  const labels = ["Amit", "Anurag", "Ashwin", "Om"];
-  return Promise.all(
-    labels.map(async (label) => {
-      const descriptions = [];
-      for (let i = 1; i <= 2; i++) {
-        const img = await faceapi.fetchImage(`./labels/${label}/${i}.jpg`);
-        const detections = await faceapi
-          .detectSingleFace(img)
-          .withFaceLandmarks()
-          .withFaceDescriptor();
-        descriptions.push(detections.descriptor);
-      }
-      return new faceapi.LabeledFaceDescriptors(label, descriptions);
-    })
-  );
-}
+inputImage.onload = function() {
+  // Draw image on canvas
+  canvas.width = inputImage.width;
+  canvas.height = inputImage.height;
+  ctx.drawImage(inputImage, 0, 0, inputImage.width, inputImage.height);
 
-video.addEventListener("play", async () => {
-  const labeledFaceDescriptors = await getLabeledFaceDescriptions();
-  const faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors);
-
-  const canvas = faceapi.createCanvasFromMedia(video);
-  document.body.append(canvas);
-
-  const displaySize = { width: video.width, height: video.height };
-  faceapi.matchDimensions(canvas, displaySize);
-
-  setInterval(async () => {
-    const detections = await faceapi
-      .detectAllFaces(video)
-      .withFaceLandmarks()
-      .withFaceDescriptors();
-
-    const resizedDetections = faceapi.resizeResults(detections, displaySize);
-
-    canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
-
-    const results = resizedDetections.map((d) => {
-      return faceMatcher.findBestMatch(d.descriptor);
-    });
-    results.forEach((result, i) => {
-      const box = resizedDetections[i].detection.box;
-      const drawBox = new faceapi.draw.DrawBox(box, {
-        label: result,
+  // Detect faces
+  const faceDetector = new FaceDetector();
+  faceDetector.detect(inputImage)
+    .then(faces => {
+      faces.forEach(face => {
+        drawFaceRectangle(face.boundingBox);
       });
-      drawBox.draw(canvas);
+    })
+    .catch(error => {
+      console.error('Face detection failed:', error);
     });
-  }, 100);
-});
+}
+
+function drawFaceRectangle(box) {
+  ctx.strokeStyle = 'red';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(box.x, box.y, box.width, box.height);
+}
